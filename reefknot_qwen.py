@@ -36,7 +36,7 @@ class ReefknotQwen(nn.Module):
             
         if ReefknotQwen._global_processor is None:
             print(f"[ReefknotQwen] Loading processor from {model_path} (dtype={dtype})...")
-            ReefknotQwen._global_processor = AutoProcessor.from_pretrained(model_path, **model_kwargs).eval()
+            ReefknotQwen._global_processor = AutoProcessor.from_pretrained(model_path, **model_kwargs)
             
         else:
             print("[ReefknotQwen] Reusing existing model instance")
