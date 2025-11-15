@@ -114,7 +114,16 @@ def eval_model(args):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        prompt = item.get("query_prompt", "")
+        # prompt = item.get("query_prompt", "")
+        raw_question = item.get("query_prompt", "")
+
+        prompt = (
+            "<|im_start|>user\n"
+            + raw_question
+            + "\nOnly answer yes or no.\n"
+            + "<|im_end|>\n"
+            + "<|im_start|>assistant\n"
+        )
 
         # Build inputs on CPU, then move tensors to GPU
         inputs = processor(
