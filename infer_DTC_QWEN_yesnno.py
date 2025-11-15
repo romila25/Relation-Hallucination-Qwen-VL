@@ -121,6 +121,7 @@ def eval_model(args):
         image = Image.open(img_path).convert("RGB")
         # prompt = item.get("query_prompt", "")
         raw_question = item.get("query_prompt", "")
+        raw_label = item.get("label", "")
 
         prompt = (
             "<|im_start|>user\n"
@@ -169,6 +170,7 @@ def eval_model(args):
             print("Image:", img_path)
             print("Prompt:", prompt)
             print("Response:", response)
+            print('Label:', raw_label)
             print("Time:", f"{elapsed:.2f}s")
             print("===================================\n")
 
