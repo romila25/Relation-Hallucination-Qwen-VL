@@ -12,8 +12,6 @@ from reefknot_qwen import ReefknotQwen
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
 
-
-DTC_function()
 # ---------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------
@@ -65,10 +63,10 @@ def eval_model(args):
     print("[INFO] Loading model in FP16 on GPU (no offload)...")
 
     model = ReefknotQwen(model_path, dtype=torch.float16)
-
+    
     processor = model.processor
     
-    
+    DTC_function()
     # ------------------------------
     # Load processor
     # ------------------------------
