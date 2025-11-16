@@ -59,6 +59,7 @@ def DTC_function():
         threshold = getattr(self.generation_config, "dtc_threshold", None)
         layer = getattr(self.generation_config, "dtc_layer", None)
 
+        print(f'Layer: {layer}')
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
@@ -82,7 +83,6 @@ def DTC_function():
         output_hidden_states = True
         return_dict_in_generate = True
 
-       
         scores = () if (return_dict_in_generate and output_scores) else None
         decoder_attentions = () if (return_dict_in_generate and output_attentions) else None
         cross_attentions = () if (return_dict_in_generate and output_attentions) else None
@@ -145,12 +145,15 @@ def DTC_function():
             if use_dtc:
                 relative_top = 0.1
 
+                print("Using DTC")
 
                 final_logits_norm = final_logits_step.float().log_softmax(dim=-1)  # [bsz, vocab]
                 base_logits_norm = base_logits_step.float().log_softmax(dim=-1)    # [bsz, vocab]
 
                 if relative_top > 0.0:
 
+                    print(f'Relative top {relative_top}')
+                    
                     sorted_logits, _ = torch.sort(final_logits_norm, descending=True)
                     min_thresh = sorted_logits[..., 0]  # [bsz]
                     probs_max = torch.max(final_logits_norm, dim=-1).values  # [bsz]
