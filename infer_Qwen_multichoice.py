@@ -162,14 +162,14 @@ def eval_model(args):
         if idx < 2:
             print("\n========== SAMPLE OUTPUT ==========")
             print("Image:", img_path)
-            print("Prompt:", prompt)
+            print("Prompt:", raw_question)
             print("Response:", response)
             print("Time:", f"{elapsed:.2f}s")
             print("===================================\n")
 
         record = {
             "image_id": item.get("image_id"),
-            "query_prompt": prompt,
+            "query_prompt": raw_question,
             "response": response,
             "label": item.get("label"),
             "mllm_name": "Qwen-VL-7B-FP16-GPU",
