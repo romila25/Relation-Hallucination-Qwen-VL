@@ -17,7 +17,7 @@ class ReefknotQwen(nn.Module):
 
         model_kwargs = {
             "torch_dtype": dtype,
-            "device_map": device,
+            "device_map": "auto",
             "trust_remote_code": True,
         }
         
