@@ -32,6 +32,7 @@ def DTC_function():
     _orig_generate = ReefknotQwen.generate
 
     def _generate_patch(self, *args, **kwargs):
+        print("patch called")
         _stash_dtc_to_config(self, kwargs)
         return _orig_generate(self, *args, **kwargs)
 
@@ -265,7 +266,7 @@ def DTC_function():
     ReefknotQwen.greedy_search = greedy_search_redefine
 
     print(
-        "[DTC] Patched LlavaLlamaForCausalLM.generate + greedy_search; "
+        "[DTC] Patched AutoModelForCausalLM.generate + greedy_search; "
         "custom params read from generation_config.",
         flush=True,
     )
