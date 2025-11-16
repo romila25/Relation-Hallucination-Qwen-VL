@@ -56,7 +56,7 @@ class ReefknotQwen(nn.Module):
 
     def generate(self, **kwargs):
         # This will be patched by DTC_function
-        print("generate called")
+        print(f'generate called {kwargs}')
         return self.llm.generate(**kwargs)
 
     @property
