@@ -52,16 +52,19 @@ def eval_model(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[INFO] Using device: {device}")
 
-    model_path = os.path.expanduser(args.model_path)
+    # model_path = os.path.expanduser(args.model_path)
     print(f"[INFO] Loading model from: {model_path}")
 
     # ------------------------------
     # Load processor
     # ------------------------------
     print("[INFO] Loading processor...")
-    processor = AutoProcessor.from_pretrained(
-    model_path,
-    trust_remote_code=True,
+    
+    model_path = "Qwen/Qwen-VL-Chat-Int4"
+    
+    processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path, trust_remote_code=True, device_map="auto"
     )
     print("[INFO] Processor loaded.\n")
 
