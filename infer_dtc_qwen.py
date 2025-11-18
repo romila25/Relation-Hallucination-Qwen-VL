@@ -78,7 +78,7 @@ def eval_model(args):
         device_map="auto",
         torch_dtype=torch.float16,
         trust_remote_code=True,
-    ).to(device).eval()
+    ).eval()
 
     p = next(model.parameters())
     print(f"[INFO] Model param: dtype={p.dtype}, device={p.device}\n")
