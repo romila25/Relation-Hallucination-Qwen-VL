@@ -29,14 +29,14 @@ def _stash_dtc_to_config(self, kwargs: dict):
 
 def DTC_function():
    
-    _orig_generate = ReefknotQwen.generate
+    _orig_generate = GenerationMixin.generate
 
     def _generate_patch(self, *args, **kwargs):
         print("patch called")
         _stash_dtc_to_config(self, kwargs)
         return _orig_generate(self, *args, **kwargs)
 
-    ReefknotQwen.generate = _generate_patch
+    GenerationMixin.generate = _generate_patch
 
     
     def greedy_search_redefine(
@@ -261,9 +261,8 @@ def DTC_function():
         else:
             return input_ids
 
-    
     GenerationMixin.greedy_search = greedy_search_redefine
-    ReefknotQwen.greedy_search = greedy_search_redefine
+    # ReefknotQwen._global_llm_instance.greedy_search = greedy_search_redefine
 
     print(
         "[DTC] Patched AutoModelForCausalLM.generate + greedy_search; "
