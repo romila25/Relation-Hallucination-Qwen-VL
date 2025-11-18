@@ -51,7 +51,7 @@ def eval_model(args):
     print("  Qwen-VL-7B (FP16, full GPU)")
     print("==============================\n")
 
-    device = "auto" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[INFO] Using device: {device}")
 
     model_path = os.path.expanduser(args.model_path)
