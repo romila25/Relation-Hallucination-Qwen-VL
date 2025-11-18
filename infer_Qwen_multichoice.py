@@ -74,6 +74,7 @@ def eval_model(args):
         model_path,
         torch_dtype=torch.float16,
         trust_remote_code=True,
+        local_files_only=True, 
     ).to(device).eval()
 
     p = next(model.parameters())
