@@ -149,7 +149,7 @@ def eval_model(args):
         else:
             gen_kwargs["do_sample"] = False
 
-        gen_kwargs["num_bean"] = 1
+        gen_kwargs["num_beans"] = 1
         start = time.time()
 
         output_ids = model.generate(
