@@ -147,6 +147,7 @@ def eval_model(args):
         else:
             gen_kwargs["do_sample"] = False
 
+        gen_kwargs["num_bean"] = 1
         start = time.time()
 
         output_ids = model.generate(
@@ -205,6 +206,10 @@ def main():
     parser.add_argument("--top_p", type=float, default=None)
     parser.add_argument("--max-samples", type=int, default=None)
 
+    parser.add_argument("--apha", type=float, default=0.1)
+    parser.add_argument("--layer", type=int, default=38)
+    parser.add_argument("--threshold", type=float, default=0.9)
+    
     args = parser.parse_args()
     eval_model(args)
 
