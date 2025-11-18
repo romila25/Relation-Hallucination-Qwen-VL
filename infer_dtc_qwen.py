@@ -51,7 +51,7 @@ def eval_model(args):
     print("  Qwen-VL-7B (FP16, full GPU)")
     print("==============================\n")
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "auto" if torch.cuda.is_available() else "cpu"
     print(f"[INFO] Using device: {device}")
 
     model_path = os.path.expanduser(args.model_path)
@@ -63,6 +63,7 @@ def eval_model(args):
     print("[INFO] Loading processor...")
     processor = AutoProcessor.from_pretrained(
         model_path,
+        device_map="auto",
         trust_remote_code=True,
     )
     print("[INFO] Processor loaded.\n")
@@ -74,6 +75,7 @@ def eval_model(args):
 
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
+        device_map="auto",
         torch_dtype=torch.float16,
         trust_remote_code=True,
     ).to(device).eval()
