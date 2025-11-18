@@ -15,11 +15,6 @@ from transformers.generation.utils import (
     GenerateDecoderOnlyOutput,
 )
 
-
-from reefknot_qwen import ReefknotQwen
-
-
-
 def _stash_dtc_to_config(self, kwargs: dict):
 
     for k in ("apha", "threshold", "layer"):
