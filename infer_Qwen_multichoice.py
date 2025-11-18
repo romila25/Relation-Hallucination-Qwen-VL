@@ -60,8 +60,8 @@ def eval_model(args):
     # ------------------------------
     print("[INFO] Loading processor...")
     processor = AutoProcessor.from_pretrained(
-        model_path,
-        trust_remote_code=True,
+    "Qwen/Qwen-VL-Chat",
+    trust_remote_code=True,
     )
     print("[INFO] Processor loaded.\n")
 
