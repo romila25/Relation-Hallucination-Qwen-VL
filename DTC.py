@@ -51,9 +51,9 @@ def DTC_function():
         **model_kwargs,  
     ):
         
-        apha = getattr(self.generation_config, "dtc_apha", None)            
-        threshold = getattr(self.generation_config, "dtc_threshold", None)
-        layer = getattr(self.generation_config, "dtc_layer", None)
+        apha = getattr(self.generation_config, "dtc_apha", 0.1)            
+        threshold = getattr(self.generation_config, "dtc_threshold", 0.9)
+        layer = getattr(self.generation_config, "dtc_layer", 38)
 
         print(f'Layer: {layer}')
         
