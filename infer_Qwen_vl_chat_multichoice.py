@@ -81,34 +81,26 @@ def eval_model(args):
 
     # Loop
     for idx, item in enumerate(tqdm(questions)):
-
-        # Load image
+    
         img_path = get_image_path(item["image_id"], args.image_folder)
         if not img_path:
             continue
-
-        image = Image.open(img_path).convert("RGB")
+    
         raw_question = item.get("query_prompt", "")
-
-        # ---------------------------------------------------------
-        # Build Qwen-VL Chat prompt (legacy Qwen-VL format)
-        # ---------------------------------------------------------
+    
         prompt = (
             "<img></img>\n"
             f"{raw_question}\n"
             "Only answer yes or no.\nAnswer:"
         )
-
-        # ---------------------------------------------------------
-        # IMPORTANT: Qwen-VL-Chat-Int4 requires processor(text + image together)
-        # ---------------------------------------------------------
+    
+        # IMPORTANT: For Qwen-VL-Chat-Int4, pass the *image path*
         inputs = processor(
             text=prompt,
-            images=image,
+            images=img_path,          # <<< FIX HERE
             return_tensors="pt"
         ).to(device)
-
-        # Generation config
+    
         gen_kwargs = {
             "max_new_tokens": args.max_new_tokens,
             "do_sample": args.temperature > 0,
@@ -117,19 +109,18 @@ def eval_model(args):
             gen_kwargs["temperature"] = args.temperature
             if args.top_p:
                 gen_kwargs["top_p"] = args.top_p
-
+    
         start = time.time()
-
-        # Generate
+    
         output_ids = model.generate(
             **inputs,
             **gen_kwargs
         )
-
+    
         elapsed = time.time() - start
-
-        # Decode
+    
         response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+    
 
         # Record
         record = {
