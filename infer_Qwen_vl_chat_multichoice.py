@@ -91,7 +91,7 @@ def eval_model(args):
         raw_question = item.get("query_prompt", "")
 
         # ---------------------------------------------------------
-        # Build Qwen-VL Chat prompt (NO apply_chat_template)
+        # Build Qwen-VL Chat prompt (legacy Qwen-VL format)
         # ---------------------------------------------------------
         prompt = (
             "<img></img>\n"
@@ -99,24 +99,16 @@ def eval_model(args):
             "Only answer yes or no.\nAnswer:"
         )
 
-        # Text encoding
-        text_inputs = processor(
+        # ---------------------------------------------------------
+        # IMPORTANT: Qwen-VL-Chat-Int4 requires processor(text + image together)
+        # ---------------------------------------------------------
+        inputs = processor(
             text=prompt,
-            return_tensors="pt"
-        ).input_ids.to(device)
-
-        # Image encoding
-        vision_inputs = processor(
             images=image,
             return_tensors="pt"
-        )["pixel_values"].to(device)
+        ).to(device)
 
-        inputs = {
-            "input_ids": text_inputs,
-            "images": vision_inputs
-        }
-
-        # Generation settings
+        # Generation config
         gen_kwargs = {
             "max_new_tokens": args.max_new_tokens,
             "do_sample": args.temperature > 0,
@@ -128,6 +120,7 @@ def eval_model(args):
 
         start = time.time()
 
+        # Generate
         output_ids = model.generate(
             **inputs,
             **gen_kwargs
@@ -135,8 +128,10 @@ def eval_model(args):
 
         elapsed = time.time() - start
 
+        # Decode
         response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
 
+        # Record
         record = {
             "image_id": item.get("image_id"),
             "query_prompt": raw_question,
