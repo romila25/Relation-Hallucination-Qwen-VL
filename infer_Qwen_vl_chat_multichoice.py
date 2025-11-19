@@ -9,16 +9,20 @@ from PIL import Image
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
 
+
 # ---------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------
 
 def get_image_path(image_id, root):
+    """Return full path to image in VG_100K or VG_100K_2."""
     iid = str(image_id).replace(".jpg", "")
     p1 = os.path.join(root, "VG_100K", f"{iid}.jpg")
     p2 = os.path.join(root, "VG_100K_2", f"{iid}.jpg")
-    if os.path.exists(p1): return p1
-    if os.path.exists(p2): return p2
+    if os.path.exists(p1):
+        return p1
+    if os.path.exists(p2):
+        return p2
     print(f"[WARN] Missing image {iid}.jpg")
     return None
 
@@ -27,7 +31,7 @@ def split_list(lst, n):
     if n <= 0:
         return [lst]
     chunk = math.ceil(len(lst) / n)
-    return [lst[i:i+chunk] for i in range(0, len(lst), chunk)]
+    return [lst[i:i + chunk] for i in range(0, len(lst), chunk)]
 
 
 def get_chunk(lst, n_chunks, idx):
@@ -36,99 +40,139 @@ def get_chunk(lst, n_chunks, idx):
 
 
 # ---------------------------------------------------------
-# Main inference logic
+# Main inference
 # ---------------------------------------------------------
 
 @torch.inference_mode()
 def eval_model(args):
     print("\n==============================")
-    print("  Qwen-VL-Chat-Int4 Inference")
+    print("  Qwen-VL-7B (FP16, full GPU)")
     print("==============================\n")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[INFO] Using device: {device}")
 
     model_path = os.path.expanduser(args.model_path)
+    print(f"[INFO] Loading model from: {model_path}")
 
+    # ------------------------------
     # Load processor
+    # ------------------------------
     print("[INFO] Loading processor...")
     processor = AutoProcessor.from_pretrained(
         model_path,
         trust_remote_code=True,
     )
+    print("[INFO] Processor loaded.\n")
 
-    # Load model
-    print("[INFO] Loading model...")
+    # ------------------------------
+    # Load model fully on GPU (no offload)
+    # ------------------------------
+    print("[INFO] Loading model in FP16 on GPU (no offload)...")
+
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        device_map="auto",
-        trust_remote_code=True
-    ).eval()
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
+    ).to(device).eval()
 
+    p = next(model.parameters())
+    print(f"[INFO] Model param: dtype={p.dtype}, device={p.device}\n")
+
+    # ------------------------------
     # Load questions
+    # ------------------------------
     print("[INFO] Reading questions:", args.question_file)
     with open(os.path.expanduser(args.question_file), "r") as f:
         questions = [json.loads(line) for line in f]
 
+    print(f"[INFO] Total samples in file: {len(questions)}")
+
     questions = get_chunk(questions, args.num_chunks, args.chunk_idx)
+    print(f"[INFO] Using chunk {args.chunk_idx+1}/{args.num_chunks} -> {len(questions)} samples")
+
     if args.max_samples:
         questions = questions[:args.max_samples]
+        print(f"[INFO] Limiting to first {args.max_samples} samples\n")
 
-    # Output file
+    # ------------------------------
+    # Prepare output
+    # ------------------------------
     answers_path = os.path.expanduser(args.answers_file)
     os.makedirs(os.path.dirname(answers_path), exist_ok=True)
     out = open(answers_path, "w")
 
-    # Loop
-    for idx, item in enumerate(tqdm(questions)):
-    
+    print("[INFO] Starting inference...\n")
+
+    # ------------------------------
+    # Inference loop
+    # ------------------------------
+    for idx, item in enumerate(tqdm(questions, desc="Processing")):
+
         img_path = get_image_path(item["image_id"], args.image_folder)
         if not img_path:
             continue
-    
+
+        image = Image.open(img_path).convert("RGB")
+        # prompt = item.get("query_prompt", "")
         raw_question = item.get("query_prompt", "")
-    
+
         prompt = (
-            "<img></img>\n"
-            f"{raw_question}\n"
-            "Only answer yes or no.\nAnswer:"
+            "<|im_start|>user\n"
+            + raw_question
+            + "\nOnly return the choice\n"
+            + "<|im_end|>\n"
+            + "<|im_start|>assistant\n"
         )
-    
-        # IMPORTANT: For Qwen-VL-Chat-Int4, pass the *image path*
+
+        # Build inputs on CPU, then move tensors to GPU
         inputs = processor(
+            images=image,
             text=prompt,
-            images=img_path,          # <<< FIX HERE
-            return_tensors="pt"
-        ).to(device)
-    
+            return_tensors="pt",
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
+        # Generation params
         gen_kwargs = {
             "max_new_tokens": args.max_new_tokens,
-            "do_sample": args.temperature > 0,
         }
         if args.temperature > 0:
+            gen_kwargs["do_sample"] = True
             gen_kwargs["temperature"] = args.temperature
             if args.top_p:
                 gen_kwargs["top_p"] = args.top_p
-    
+        else:
+            gen_kwargs["do_sample"] = False
+
         start = time.time()
-    
+
         output_ids = model.generate(
             **inputs,
-            **gen_kwargs
+            **gen_kwargs,
         )
-    
-        elapsed = time.time() - start
-    
-        response = processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-    
 
-        # Record
+        elapsed = time.time() - start
+
+        response = processor.batch_decode(
+            output_ids,
+            skip_special_tokens=True,
+        )[0].strip()
+
+        if idx < 2:
+            print("\n========== SAMPLE OUTPUT ==========")
+            print("Image:", img_path)
+            print("Prompt:", prompt)
+            print("Response:", response)
+            print("Time:", f"{elapsed:.2f}s")
+            print("===================================\n")
+
         record = {
             "image_id": item.get("image_id"),
-            "query_prompt": raw_question,
+            "query_prompt": prompt,
             "response": response,
             "label": item.get("label"),
-            "mllm_name": "Qwen-VL-Chat-Int4",
+            "mllm_name": "Qwen-VL-7B-FP16-GPU",
             "inference_time": elapsed,
         }
 
@@ -146,7 +190,7 @@ def eval_model(args):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model-path", type=str, default="Qwen/Qwen-VL-Chat-Int4")
+    parser.add_argument("--model-path", type=str, default="/kaggle/working/Qwen-VL-7B")
     parser.add_argument("--image_folder", type=str, required=True)
     parser.add_argument("--question-file", type=str, required=True)
     parser.add_argument("--answers-file", type=str, required=True)
