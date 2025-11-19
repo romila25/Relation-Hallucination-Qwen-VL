@@ -42,7 +42,7 @@ def get_chunk(lst, n_chunks, idx):
 @torch.inference_mode()
 def eval_model(args):
     print("\n==============================")
-    print("  Qwen-VL-Chat (FP16, GPU)")
+    print("  Qwen-VL-Chat-Int4 Inference")
     print("==============================\n")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -57,13 +57,12 @@ def eval_model(args):
         trust_remote_code=True,
     )
 
-    # Load model fully on GPU
+    # Load model
     print("[INFO] Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        torch_dtype=torch.float16,
         device_map="auto",
-        trust_remote_code=True,
+        trust_remote_code=True
     ).eval()
 
     # Load questions
@@ -83,7 +82,7 @@ def eval_model(args):
     # Loop
     for idx, item in enumerate(tqdm(questions)):
 
-        # Get image
+        # Load image
         img_path = get_image_path(item["image_id"], args.image_folder)
         if not img_path:
             continue
@@ -91,34 +90,30 @@ def eval_model(args):
         image = Image.open(img_path).convert("RGB")
         raw_question = item.get("query_prompt", "")
 
-        # Build the Qwen-VL-Chat style message
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image", "image": image},
-                    {"type": "text", "text": raw_question + "\nOnly answer yes or no."},
-                ],
-            }
-        ]
+        # ---------------------------------------------------------
+        # Build Qwen-VL Chat prompt (NO apply_chat_template)
+        # ---------------------------------------------------------
+        prompt = (
+            "<img></img>\n"
+            f"{raw_question}\n"
+            "Only answer yes or no.\nAnswer:"
+        )
 
-        # Build input_ids from chat template
-        text_inputs = processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
+        # Text encoding
+        text_inputs = processor(
+            text=prompt,
             return_tensors="pt"
-        ).to(device)
+        ).input_ids.to(device)
 
-        # Process image for the model
+        # Image encoding
         vision_inputs = processor(
             images=image,
             return_tensors="pt"
         )["pixel_values"].to(device)
 
-        # Merge inputs
         inputs = {
             "input_ids": text_inputs,
-            "images": vision_inputs,
+            "images": vision_inputs
         }
 
         # Generation settings
@@ -147,7 +142,7 @@ def eval_model(args):
             "query_prompt": raw_question,
             "response": response,
             "label": item.get("label"),
-            "mllm_name": "Qwen-VL-Chat-FP16",
+            "mllm_name": "Qwen-VL-Chat-Int4",
             "inference_time": elapsed,
         }
 
@@ -165,7 +160,7 @@ def eval_model(args):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model-path", type=str, default="Qwen/Qwen-VL-Chat")
+    parser.add_argument("--model-path", type=str, default="Qwen/Qwen-VL-Chat-Int4")
     parser.add_argument("--image_folder", type=str, required=True)
     parser.add_argument("--question-file", type=str, required=True)
     parser.add_argument("--answers-file", type=str, required=True)
