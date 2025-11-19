@@ -69,17 +69,15 @@ def eval_model(args):
     # Load model with 4-bit quantization
     # ------------------------------
     print("[INFO] Loading model in 4-bit quantization...")
-
-    # For 4-bit quantization, we need to use specific loading parameters
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        torch_dtype=torch.float16,  # Keep compute dtype as float16
+        torch_dtype=torch.float16, 
         trust_remote_code=True,
-        device_map="auto",  # Let transformers handle device placement
+        device_map="auto",  
         load_in_4bit=True,  # Enable 4-bit quantization
-        bnb_4bit_compute_dtype=torch.float16,  # Compute dtype for 4-bit
-        bnb_4bit_use_double_quant=True,  # Use nested quantization for better memory efficiency
-        bnb_4bit_quant_type="nf4",  # Use normalized float 4-bit quantization
+        # bnb_4bit_compute_dtype=torch.float16,
+        # bnb_4bit_use_double_quant=True,  
+        # bnb_4bit_quant_type="nf4", 
     ).eval()
 
     p = next(model.parameters())
