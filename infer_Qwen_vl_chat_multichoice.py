@@ -7,7 +7,7 @@ from tqdm import tqdm
 from PIL import Image
 
 import torch
-from transformers import AutoProcessor, AutoModelForCausalLM
+from transformers import AutoProcessor, AutoModelForCausalLM, AutoModel
 
 
 # ---------------------------------------------------------
