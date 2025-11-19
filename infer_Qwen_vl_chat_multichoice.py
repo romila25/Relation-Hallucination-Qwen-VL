@@ -45,9 +45,9 @@ def get_chunk(lst, n_chunks, idx):
 
 @torch.inference_mode()
 def eval_model(args):
-    print("\n==============================")
-    print("  Qwen-VL-7B (FP16, full GPU)")
-    print("==============================\n")
+    print("\n==================================")
+    print("  Qwen-VL-Chat-Int4 (4-bit quantized)")
+    print("==================================\n")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[INFO] Using device: {device}")
@@ -66,18 +66,30 @@ def eval_model(args):
     print("[INFO] Processor loaded.\n")
 
     # ------------------------------
-    # Load model fully on GPU (no offload)
+    # Load model with 4-bit quantization
     # ------------------------------
-    print("[INFO] Loading model in FP16 on GPU (no offload)...")
+    print("[INFO] Loading model in 4-bit quantization...")
 
+    # For 4-bit quantization, we need to use specific loading parameters
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.float16,  # Keep compute dtype as float16
         trust_remote_code=True,
-    ).to(device).eval()
+        device_map="auto",  # Let transformers handle device placement
+        load_in_4bit=True,  # Enable 4-bit quantization
+        bnb_4bit_compute_dtype=torch.float16,  # Compute dtype for 4-bit
+        bnb_4bit_use_double_quant=True,  # Use nested quantization for better memory efficiency
+        bnb_4bit_quant_type="nf4",  # Use normalized float 4-bit quantization
+    ).eval()
 
     p = next(model.parameters())
-    print(f"[INFO] Model param: dtype={p.dtype}, device={p.device}\n")
+    print(f"[INFO] Model param: dtype={p.dtype}, device={p.device}")
+    print(f"[INFO] Model is quantized: {getattr(p, 'is_quantized', False)}")
+    
+    # Print memory usage info
+    if torch.cuda.is_available():
+        print(f"[INFO] GPU memory allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+    print()
 
     # ------------------------------
     # Load questions
@@ -114,9 +126,9 @@ def eval_model(args):
             continue
 
         image = Image.open(img_path).convert("RGB")
-        # prompt = item.get("query_prompt", "")
         raw_question = item.get("query_prompt", "")
 
+        # Use Qwen-VL chat template format
         prompt = (
             "<|im_start|>user\n"
             + raw_question
@@ -125,17 +137,18 @@ def eval_model(args):
             + "<|im_start|>assistant\n"
         )
 
-        # Build inputs on CPU, then move tensors to GPU
+        # Build inputs - let processor handle device placement
         inputs = processor(
             images=image,
             text=prompt,
             return_tensors="pt",
         )
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        # inputs are automatically moved to the correct device by the model
 
         # Generation params
         gen_kwargs = {
             "max_new_tokens": args.max_new_tokens,
+            "pad_token_id": processor.tokenizer.eos_token_id,  # Important for quantized models
         }
         if args.temperature > 0:
             gen_kwargs["do_sample"] = True
@@ -159,12 +172,18 @@ def eval_model(args):
             skip_special_tokens=True,
         )[0].strip()
 
+        # Extract only the assistant's response (remove the prompt)
+        if prompt in response:
+            response = response.split(prompt)[-1].strip()
+
         if idx < 2:
             print("\n========== SAMPLE OUTPUT ==========")
             print("Image:", img_path)
             print("Prompt:", prompt)
             print("Response:", response)
             print("Time:", f"{elapsed:.2f}s")
+            if torch.cuda.is_available():
+                print(f"GPU memory: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
             print("===================================\n")
 
         record = {
@@ -172,7 +191,7 @@ def eval_model(args):
             "query_prompt": prompt,
             "response": response,
             "label": item.get("label"),
-            "mllm_name": "Qwen-VL-7B-FP16-GPU",
+            "mllm_name": "Qwen-VL-Chat-Int4",
             "inference_time": elapsed,
         }
 
@@ -190,7 +209,7 @@ def eval_model(args):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model-path", type=str, default="/kaggle/working/Qwen-VL-7B")
+    parser.add_argument("--model-path", type=str, default="Qwen/Qwen-VL-Chat-Int4")
     parser.add_argument("--image_folder", type=str, required=True)
     parser.add_argument("--question-file", type=str, required=True)
     parser.add_argument("--answers-file", type=str, required=True)
