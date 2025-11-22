@@ -10,7 +10,9 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
 )
- 
+
+from DTC import DTC_function
+
 def get_image_path(image_id, root):
     """Return full path to image in VG_100K or VG_100K_2."""
     iid = str(image_id).replace(".jpg", "")
@@ -161,8 +163,13 @@ def main():
     parser.add_argument("--num-chunks", type=int, default=1)
     parser.add_argument("--chunk-idx", type=int, default=0)
     parser.add_argument("--max_samples", type=int, default=None)
-
+    parser.add_argument("--use_dtc", type=bool, default=False)
+    
     args = parser.parse_args()
+    
+    if args.use_dtc == True:
+        DTC_function()
+        
     eval_model(args)
 
 
