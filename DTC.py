@@ -55,7 +55,7 @@ def DTC_function():
         threshold = getattr(self.generation_config, "dtc_threshold", 0.9)
         layer = getattr(self.generation_config, "dtc_layer", 38)
 
-        print(f'Layer: {layer}')
+        print(f'Dtc called')
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
