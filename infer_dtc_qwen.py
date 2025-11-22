@@ -159,13 +159,13 @@ def eval_model(args):
 
         elapsed = time.time() - start
 
-        print(output_ids)
+        print(output_ids.shape)
         
         response = processor.batch_decode(
             output_ids,
             skip_special_tokens=True,
-        )
-        
+        )[0].strip()
+
         if idx < 2:
             print("\n========== SAMPLE OUTPUT ==========")
             print("Image:", img_path)
