@@ -27,7 +27,6 @@ def DTC_function():
     _orig_generate = GenerationMixin.generate
 
     def _generate_patch(self, *args, **kwargs):
-        print("patch called")
         _stash_dtc_to_config(self, kwargs)
         return _orig_generate(self, *args, **kwargs)
 
@@ -54,8 +53,6 @@ def DTC_function():
         apha = getattr(self.generation_config, "dtc_apha", 0.1)            
         threshold = getattr(self.generation_config, "dtc_threshold", 0.9)
         layer = getattr(self.generation_config, "dtc_layer", 38)
-
-        print(f'Dtc called')
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
