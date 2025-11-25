@@ -152,6 +152,9 @@ def DTC_function():
                     min_thresh = sorted_logits[..., 0]  # [bsz]
                     probs_max = torch.max(final_logits_norm, dim=-1).values  # [bsz]
                     probs_thresh = torch.min(min_thresh, probs_max + math.log(relative_top)).unsqueeze(-1)  # [bsz,1]
+                    
+                    print(f' probs_thres {probs_thresh}')
+                    
                     mask = final_logits_norm < probs_thresh  # [bsz, vocab]
 
                     print("Mask")
