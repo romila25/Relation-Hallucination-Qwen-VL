@@ -125,8 +125,8 @@ def DTC_function():
             
             softmax_final = F.softmax(final_logits_step.float(), dim=-1)
            
-            yes_prob = softmax_final.flatten()[9693].item()
-            no_prob = softmax_final.flatten()[2152].item()
+            yes_prob = softmax_final.flatten()[9454].item()
+            no_prob = softmax_final.flatten()[2753].item()
 
             if threshold is not None and yes_prob > 0.0 and no_prob > 0.0:
                 yes_no_entropy = -(yes_prob * math.log2(yes_prob) + no_prob * math.log2(no_prob))
@@ -153,6 +153,8 @@ def DTC_function():
                     probs_thresh = torch.min(min_thresh, probs_max + math.log(relative_top)).unsqueeze(-1)  # [bsz,1]
                     mask = final_logits_norm < probs_thresh  # [bsz, vocab]
 
+                    print("Mask")
+                    print(max(mask))
        
                     final_logits_norm = final_logits_norm.masked_fill(mask, float("-inf"))
                     base_logits_norm = base_logits_norm.masked_fill(mask, float("-inf"))
