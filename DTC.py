@@ -54,6 +54,7 @@ def DTC_function():
         threshold = getattr(self.generation_config, "dtc_threshold", 0.9)
         layer = getattr(self.generation_config, "dtc_layer", 38)
         
+        
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
         if max_length is not None:
@@ -154,7 +155,7 @@ def DTC_function():
                     mask = final_logits_norm < probs_thresh  # [bsz, vocab]
 
                     print("Mask")
-                    print(max(mask))
+                    print(torch.max(mask))
        
                     final_logits_norm = final_logits_norm.masked_fill(mask, float("-inf"))
                     base_logits_norm = base_logits_norm.masked_fill(mask, float("-inf"))
