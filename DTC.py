@@ -166,6 +166,7 @@ def DTC_function():
 
                     print("Mask")
                     print(torch.max(mask))
+                    print(torch.min(mask))
        
                     final_logits_norm = final_logits_norm.masked_fill(mask, float('-inf'))
                     base_logits_norm = base_logits_norm.masked_fill(mask, float('-inf'))
