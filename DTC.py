@@ -21,7 +21,7 @@ from transformers.generation.utils import (
 
 def _stash_dtc_to_config(self, kwargs: dict):
 
-    for k in ("apha", "threshold", "layer", "model-path"):
+    for k in ("apha", "threshold", "layer", "model_path"):
         if k in kwargs:
             setattr(self.generation_config, f"dtc_{k}", kwargs.pop(k))
 
