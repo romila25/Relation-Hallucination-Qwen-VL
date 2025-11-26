@@ -89,6 +89,8 @@ def eval_model(args):
 
         question = item.get("query_prompt", "")
 
+        print(item["image_id"])
+        
         query = tokenizer.from_list_format([
             {"image": img_path},
             {"text": question},
