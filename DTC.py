@@ -177,6 +177,9 @@ def DTC_function():
                 
                 print(f'Top 5 {top_val}')
                 
+                print(f'Yes logit value: {process_logits[9454]}')
+                print(f'No logit value: {process_logits[2753]}')
+                
                 next_token_logits = process_logits.to(final_logits_step.dtype)  # 还原到原 dtype（可能是 half）
             else:
                 next_token_logits = final_logits_step
