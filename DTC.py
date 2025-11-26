@@ -172,6 +172,7 @@ def DTC_function():
                     base_logits_norm = base_logits_norm.masked_fill(mask, float('-inf'))
 
                 process_logits = (1.0 + float(apha)) * final_logits_norm - float(apha) * base_logits_norm
+                process_logits = torch.nan_to_num(process_logits, nan=float('-inf'))
                 
                 top_val, _ = torch.topk(process_logits, 5)
                 
@@ -184,7 +185,6 @@ def DTC_function():
             else:
                 next_token_logits = final_logits_step
 
-                
             if first:
                 for i, hs in enumerate(outputs.hidden_states):
                     layer_logits_i = self.lm_head(hs)[:, -1, :]  # [bsz, vocab]
@@ -194,7 +194,6 @@ def DTC_function():
             
             next_tokens_scores = logits_processor(input_ids, next_token_logits)
 
-            
             if return_dict_in_generate and output_scores:
                 scores += (next_tokens_scores,)
 
@@ -211,7 +210,6 @@ def DTC_function():
                     else:
                         decoder_hidden_states += (outputs.hidden_states,)
 
-            
             next_tokens = torch.argmax(next_tokens_scores, dim=-1)
 
             tokenizer = AutoTokenizer.from_pretrained(model_path,trust_remote_code=True)
