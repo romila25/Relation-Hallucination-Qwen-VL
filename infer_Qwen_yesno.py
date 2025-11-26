@@ -171,9 +171,9 @@ def main():
     parser.add_argument("--max_samples", type=int, default=None)
     parser.add_argument("--use_dtc", type=bool, default=False)
     
-    parser.add_argument("--apha", type=int, default=1)
+    parser.add_argument("--apha", type=float, default=1)
     parser.add_argument("--layer", type=int, default=0)
-    parser.add_argument("--threshold", type=int, default=None)
+    parser.add_argument("--threshold", type=float, default=None)
     
     args = parser.parse_args()
     
