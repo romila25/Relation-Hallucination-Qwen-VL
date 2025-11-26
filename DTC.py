@@ -4,11 +4,15 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import transformers
+
+from transformers import AutoTokenizer
+
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers.generation.stopping_criteria import (
     StoppingCriteriaList,
     validate_stopping_criteria,
 )
+
 from transformers.generation.utils import (
     GenerationMixin,
     GenerateEncoderDecoderOutput,
@@ -17,7 +21,7 @@ from transformers.generation.utils import (
 
 def _stash_dtc_to_config(self, kwargs: dict):
 
-    for k in ("apha", "threshold", "layer"):
+    for k in ("apha", "threshold", "layer", "model-path"):
         if k in kwargs:
             setattr(self.generation_config, f"dtc_{k}", kwargs.pop(k))
 
@@ -53,7 +57,9 @@ def DTC_function():
         apha = getattr(self.generation_config, "dtc_apha", 0.1)            
         threshold = getattr(self.generation_config, "dtc_threshold", 0.9)
         layer = getattr(self.generation_config, "dtc_layer", 38)
+        model_path = getattr(self.generation_config, "dtc_model_path", "")
         
+        print(f'layer {layer}')
         
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
@@ -135,6 +141,7 @@ def DTC_function():
                 yes_no_entropy = 0.0
 
             
+            
             use_dtc = (threshold is not None) and (apha is not None) and (yes_no_entropy >= float(threshold))
             if use_dtc:
                 relative_top = 0.1
@@ -160,16 +167,20 @@ def DTC_function():
                     print("Mask")
                     print(torch.max(mask))
        
-                    final_logits_norm = final_logits_norm.masked_fill(mask, float("-inf"))
-                    base_logits_norm = base_logits_norm.masked_fill(mask, float("-inf"))
+                    final_logits_norm = final_logits_norm.masked_fill(mask, 0.0)
+                    base_logits_norm = base_logits_norm.masked_fill(mask, 0.0)
 
                 process_logits = (1.0 + float(apha)) * final_logits_norm - float(apha) * base_logits_norm
+                
+                top_val, _ = torch.topk(process_logits, 5)
+                
+                print(f'Top 5 {top_val}')
+                
                 next_token_logits = process_logits.to(final_logits_step.dtype)  # 还原到原 dtype（可能是 half）
             else:
-               
                 next_token_logits = final_logits_step
 
-            
+                
             if first:
                 for i, hs in enumerate(outputs.hidden_states):
                     layer_logits_i = self.lm_head(hs)[:, -1, :]  # [bsz, vocab]
@@ -199,6 +210,12 @@ def DTC_function():
             
             next_tokens = torch.argmax(next_tokens_scores, dim=-1)
 
+            tokenizer = AutoTokenizer.from_pretrained(model_path,trust_remote_code=True)
+
+            text = tokenizer.decode(next_tokens)
+
+            print(text)
+            
             device = next_tokens.device
             unfinished_sequences = unfinished_sequences.to(device)
             input_ids = input_ids.to(device)

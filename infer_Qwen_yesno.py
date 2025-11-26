@@ -98,6 +98,10 @@ def eval_model(args):
 
         chat_kwargs = {
             "max_new_tokens": args.max_new_tokens,
+            "model_path": model_path, 
+            "apha": args.apha,
+            "layer" : args.layer,
+            "threshold" : args.threshold
         }
 
         if args.temperature is not None and args.temperature > 0:
