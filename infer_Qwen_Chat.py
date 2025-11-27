@@ -63,7 +63,6 @@ def eval_model(args):
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.float16,
-        fp16=True,
         device_map="auto",
         trust_remote_code=True,
     ).eval()
