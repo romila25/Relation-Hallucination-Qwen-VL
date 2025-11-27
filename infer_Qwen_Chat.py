@@ -10,7 +10,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
 )
-import tranformers
+import transformers
 
 from DTC import DTC_function
 
