@@ -174,7 +174,7 @@ def main():
     parser.add_argument("--num-chunks", type=int, default=1)
     parser.add_argument("--chunk-idx", type=int, default=0)
     parser.add_argument("--max_samples", type=int, default=None)
-    parser.add_argument("--use_dtc", type=bool, default=False)
+    parser.add_argument("--use_dtc", type=str, default="False")
     
     parser.add_argument("--apha", type=float, default=1)
     parser.add_argument("--layer", type=int, default=0)
@@ -182,7 +182,7 @@ def main():
     
     args = parser.parse_args()
     
-    if args.use_dtc == True:
+    if args.use_dtc == "True":
         DTC_function()
         
     eval_model(args)
