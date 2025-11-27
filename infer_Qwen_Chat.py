@@ -10,6 +10,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
 )
+import tranformers
 
 from DTC import DTC_function
 
@@ -64,12 +65,13 @@ def eval_model(args):
         model_path,
         torch_dtype=torch.float16,
         device_map="auto",
+        fp16=True,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).eval()
     print("[INFO] Model loaded.\n")
 
-    torch.set_autocast_gpu_dtype(torch.float16)
+    torch.set_autocast_dtype('cuda', torch.float16)
     transformers.utils.import_utils._pt_autocast_enabled = False
     
     with open(args.question_file, "r") as f:
