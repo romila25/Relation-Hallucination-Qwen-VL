@@ -63,12 +63,15 @@ def eval_model(args):
     model = AutoModelForCausalLM.from_pretrained(
         model_path,
         torch_dtype=torch.float16,
+        fp16=True,
         device_map="auto",
-        low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).eval()
     print("[INFO] Model loaded.\n")
 
+    torch.set_autocast_gpu_dtype(torch.float16)
+    transformers.utils.import_utils._pt_autocast_enabled = False
+    
     with open(args.question_file, "r") as f:
         questions = [json.loads(line) for line in f]
 
