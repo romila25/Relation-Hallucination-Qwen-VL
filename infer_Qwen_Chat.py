@@ -148,6 +148,7 @@ def eval_model(args):
             "label": item.get("label", None),
             "mllm_name": "Qwen-VL-Chat",
             "inference_time": elapsed,
+            "relation_type": item["relation_type"]
         }
 
         out.write(json.dumps(record) + "\n")
