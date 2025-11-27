@@ -64,6 +64,7 @@ def eval_model(args):
         model_path,
         torch_dtype=torch.float16,
         device_map="auto",
+        low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).eval()
     print("[INFO] Model loaded.\n")
