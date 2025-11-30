@@ -10,7 +10,10 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
 )
- 
+import transformers
+
+from DTC import DTC_function
+
 def get_image_path(image_id, root):
     """Return full path to image in VG_100K or VG_100K_2."""
     iid = str(image_id).replace(".jpg", "")
@@ -62,11 +65,15 @@ def eval_model(args):
         model_path,
         torch_dtype=torch.float16,
         device_map="auto",
+        fp16=True,
         low_cpu_mem_usage=True,
         trust_remote_code=True,
     ).eval()
     print("[INFO] Model loaded.\n")
 
+    torch.set_autocast_dtype('cuda', torch.float16)
+    transformers.utils.import_utils._pt_autocast_enabled = False
+    
     with open(args.question_file, "r") as f:
         questions = [json.loads(line) for line in f]
 
@@ -87,6 +94,8 @@ def eval_model(args):
 
         question = item.get("query_prompt", "")
 
+        print(item["image_id"])
+        
         query = tokenizer.from_list_format([
             {"image": img_path},
             {"text": question},
@@ -95,6 +104,16 @@ def eval_model(args):
         chat_kwargs = {
             "max_new_tokens": args.max_new_tokens,
         }
+        
+        if args.use_dtc == "True":
+            chat_kwargs = {
+                "max_new_tokens": args.max_new_tokens,
+                "model_path": model_path, 
+                "apha": args.apha,
+                "layer" : args.layer,
+                "threshold" : args.threshold
+            }
+            
 
         if args.temperature is not None and args.temperature > 0:
             chat_kwargs["do_sample"] = True
@@ -129,6 +148,7 @@ def eval_model(args):
             "label": item.get("label", None),
             "mllm_name": "Qwen-VL-Chat",
             "inference_time": elapsed,
+            "relation_type": item["relation_type"]
         }
 
         out.write(json.dumps(record) + "\n")
@@ -161,8 +181,17 @@ def main():
     parser.add_argument("--num-chunks", type=int, default=1)
     parser.add_argument("--chunk-idx", type=int, default=0)
     parser.add_argument("--max_samples", type=int, default=None)
-
+    parser.add_argument("--use_dtc", type=str, default="False")
+    
+    parser.add_argument("--apha", type=float, default=1)
+    parser.add_argument("--layer", type=int, default=0)
+    parser.add_argument("--threshold", type=float, default=None)
+    
     args = parser.parse_args()
+    
+    if args.use_dtc == "True":
+        DTC_function()
+        
     eval_model(args)
 
 
